@@ -178,6 +178,22 @@ footer {
   min-height: 34px;
 }
 
+.delete-participant {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  margin-left: auto;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.delete-participant:hover {
+  background: #fff0f0;
+}
+.delete-participant svg { display: block; }
+
 .activity-card .participant-avatar {
   width: 34px;
   height: 34px;

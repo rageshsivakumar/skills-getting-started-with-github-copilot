@@ -41,6 +41,9 @@ document.addEventListener("DOMContentLoaded", () => {
               <li>
                 <span class="participant-avatar" title="${p}">${initials}</span>
                 <span class="participant-name">${p}</span>
+                <button class="delete-participant" data-activity="${name}" data-email="${p}" aria-label="Remove ${p}">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" fill="#a00"/></svg>
+                </button>
               </li>`;
           });
           participantsHTML += "</ul>";
@@ -58,6 +61,38 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         activitiesList.appendChild(activityCard);
+
+        // attach delete handlers for this card's buttons
+        activityCard.querySelectorAll('.delete-participant').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const activity = btn.getAttribute('data-activity');
+            const email = btn.getAttribute('data-email');
+            if (!activity || !email) return;
+            if (!confirm(`Remove ${email} from ${activity}?`)) return;
+
+            try {
+              const res = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
+                method: 'DELETE'
+              });
+              const data = await res.json();
+              if (res.ok) {
+                messageDiv.textContent = data.message || 'Participant removed.';
+                messageDiv.className = 'success';
+                // refresh list
+                await fetchActivities();
+              } else {
+                messageDiv.textContent = data.detail || 'Failed to remove participant.';
+                messageDiv.className = 'error';
+              }
+            } catch (err) {
+              messageDiv.textContent = 'Error removing participant.';
+              messageDiv.className = 'error';
+              console.error('Error unregistering:', err);
+            }
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+          });
+        });
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -77,6 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const email = document.getElementById("email").value;
     const activity = document.getElementById("activity").value;
+    const submitButton = signupForm.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
 
     try {
       const response = await fetch(
@@ -94,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
         signupForm.reset();
 
         // refresh activities so participants and availability update
-        fetchActivities();
+        await fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -112,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
     }
+    if (submitButton) submitButton.disabled = false;
   });
 
   // Initialize app
